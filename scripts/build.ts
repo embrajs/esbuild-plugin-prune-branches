@@ -15,38 +15,33 @@ const mangleCache: Record<string, string | false> = JSON.parse(await readFile(ca
 
 await rm(outdir, { recursive: true, force: true });
 
-for (const [format, extension, declarationExtension] of [
-  ["esm", ".mjs", ".d.mts"],
-  ["cjs", ".cjs", ".d.cts"],
-] as const) {
-  const result = await build({
-    absWorkingDir: root,
-    entryPoints,
-    outdir,
-    outExtension: { ".js": extension },
-    bundle: true,
-    format,
-    platform: "neutral",
-    packages: "external",
-    target: "esnext",
-    treeShaking: true,
-    minify: Boolean(process.env.MINIFY),
-    mangleProps: /[^_]_$/,
-    mangleQuoted: true,
-    mangleCache,
-    logLevel: "info",
-  });
+const result = await build({
+  absWorkingDir: root,
+  entryPoints,
+  outdir,
+  outExtension: { ".js": ".mjs" },
+  bundle: true,
+  format: "esm",
+  platform: "node",
+  packages: "external",
+  target: "esnext",
+  treeShaking: true,
+  minify: Boolean(process.env.MINIFY),
+  mangleProps: /[^_]_$/,
+  mangleQuoted: true,
+  mangleCache,
+  logLevel: "info",
+});
 
-  Object.assign(mangleCache, result.mangleCache);
+Object.assign(mangleCache, result.mangleCache);
 
-  await buildDts({
-    entryPoints,
-    outdir,
-    exclude: [packageName],
-    outputOptions: {
-      entryFileNames: `[name]${declarationExtension}`,
-    },
-  });
-}
+await buildDts({
+  entryPoints,
+  outdir,
+  exclude: [packageName],
+  outputOptions: {
+    entryFileNames: "[name].d.mts",
+  },
+});
 
 await writeFile(cachePath, `${JSON.stringify(mangleCache, null, 2)}\n`);

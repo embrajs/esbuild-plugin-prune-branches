@@ -9,9 +9,42 @@ esbuild plugin to prune dead conditional branches without syntax minification.
 
 ## Install
 
+```sh
+npm add -D @embra/esbuild-plugin-prune-branches
 ```
-npm add @embra/esbuild-plugin-prune-branches
+
+## Usage
+
+```ts
+import { build } from "esbuild";
+import { pruneBranchesPlugin } from "@embra/esbuild-plugin-prune-branches";
+
+await build({
+  entryPoints: ["src/index.ts"],
+  bundle: true,
+  format: "esm",
+  define: { __DEV__: "false" },
+  plugins: [pruneBranchesPlugin({ __DEV__: false })],
+});
 ```
+
+With a custom `onLoad` filter:
+
+```ts
+pruneBranchesPlugin({
+  flags: { __DEV__: false },
+  filter: /\.ts$/,
+});
+```
+
+You can also call `pruneBranches(source, flags, filename)` directly without esbuild.
+
+## What It Prunes
+
+- `if (flag)` / `if (!flag)` / `if (flag && cond)` / `if (flag || cond)` / `else if (...)`
+- Ternary expressions: `flag ? a : b`
+- Logical expressions & statements: `flag && expr`, `flag || expr`
+- `try / catch` blocks when `catch` becomes empty (`catch {}`) or reduces to `throw err`
 
 ## License
 
